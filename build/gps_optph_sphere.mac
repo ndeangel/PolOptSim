@@ -1,0 +1,10 @@
+# a gps file for testing
+
+/gps/particle opticalphoton
+/gps/energy 3 eV
+/gps/pos/type Surface
+/gps/pos/shape Sphere
+/gps/pos/radius 1 mm
+/gps/pos/centre 0.325 0.325 0.0 cm
+/gps/ang/type cos
+

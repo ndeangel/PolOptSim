@@ -1,0 +1,4 @@
+/home/deangelis/Documents/PhD/Optical_simulations/build/CMakeFiles/rebuild_cache.dir
+/home/deangelis/Documents/PhD/Optical_simulations/build/CMakeFiles/OptSim.dir
+/home/deangelis/Documents/PhD/Optical_simulations/build/CMakeFiles/edit_cache.dir
+/home/deangelis/Documents/PhD/Optical_simulations/build/CMakeFiles/main.dir

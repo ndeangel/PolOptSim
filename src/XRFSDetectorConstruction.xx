@@ -1,0 +1,504 @@
+#include "DetectorConstruction.hh"
+#include "ModuleParameterisation.hh"
+#include "SensitiveDetector.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4PhysicalConstants.hh"
+
+#include "G4NistManager.hh"
+#include "G4RunManager.hh"
+#include "G4RegionStore.hh"
+#include "G4SDManager.hh"
+#include "G4Material.hh"
+#include "G4Box.hh"
+#include "G4VSolid.hh"
+#include "G4SubtractionSolid.hh"
+#include "G4Tubs.hh"
+#include "G4Polyhedra.hh"
+#include "G4Trap.hh"
+#include "G4RotationMatrix.hh"
+#include "G4LogicalVolume.hh"
+#include "G4ThreeVector.hh"
+#include "G4PVPlacement.hh"
+#include "G4PVReplica.hh"
+#include "G4Transform3D.hh"
+#include "G4VPVParameterisation.hh"
+#include "G4PVParameterised.hh"
+#include "globals.hh"
+
+#include "G4GeometryManager.hh"
+#include "G4PhysicalVolumeStore.hh"
+#include "G4LogicalVolumeStore.hh"
+#include "G4SolidStore.hh"
+
+#include "G4VisAttributes.hh"
+#include "G4Colour.hh"
+
+//#include "G4GDMLParser.hh"
+
+#include <fstream>
+#include <vector>
+#include <string>
+
+#include "ConfigFile.hh"
+
+// Constructor 
+DetectorConstruction::DetectorConstruction() 
+:	experimentalHall_log(0), 
+	coll_log(0),
+    rod_log(0),
+    detW_log(0),
+    detG_log(0),
+    detB_log(0),
+    detC_log(0),
+	collParam(0),
+    detGParam(0),
+	experimentalHall_phys(0),
+	coll_phys(0),
+    rod_phys(0),
+    detW_phys(0),
+    detG_phys(0),
+    detB_phys(0),
+    detC_phys(0),
+	defaultMaterial(0)
+{
+	// Size of the experimental hall
+    worldSide         = 10.0 *m;
+
+	// Define the materials
+	DefineMaterials();	
+
+	// Define the parameters
+	DefineParameters();
+		
+	// Print parameters
+	PrintParameters();
+	
+;}		
+
+
+
+// Destructor 
+DetectorConstruction::~DetectorConstruction() { } 	
+
+
+
+// Definition of the parameters
+void DetectorConstruction::DefineParameters()
+{
+    
+    static const G4double inch = 2.54*cm;
+		
+	// New configuration file readout!	
+	// Uses the ConfigFile class by Rick Wagner
+	// *** NOTE: Parameter filename should not be hardcoded!
+	ConfigFile config( "detector_params.inp" );
+		
+	// The default parameters are inserted as the third argument
+	// of the readInto function.
+	// Geometrical dimensions
+	// Using a std::double variable as a pivot btv. ConfigFile and Geant doubles (with units)
+	double read = 0.;
+	int read_int = 0;
+    
+	config.readInto(read, "W", 0.56);
+	G4double s_W = read * inch;
+	config.readInto(read, "T_W", 0.02);
+	G4double s_TW = read * inch;
+	config.readInto(read, "L", 1.0);
+	G4double s_L = read * inch;
+    config.readInto(read, "S", 1.5);
+    G4double s_S = read * inch;
+    config.readInto(read, "D", 0.50);
+    G4double s_D = read * inch;
+//    config.readInto(read, "T_D", 0.05);
+    G4double s_TD = (s_W+s_TW-s_D);
+    
+    config.readInto(read, "H_D",0.122);
+    G4double s_HD = (read * inch);
+    
+    config.readInto(read, "P_D", 0.020);
+    G4double s_PD = (read * inch);
+
+    config.readInto(read, "ROD_WIDTH", 0.57);
+    G4double rod_w = read * inch;
+
+    config.readInto(read, "ROD_THICKNESS", 0.248);
+    G4double rod_t = read * inch;
+
+    config.readInto(read, "ROD_DISTANCE", 0.618);
+    G4double rod_dist = read * inch;
+
+	config.readInto(read_int, "N_X", 13);
+	G4int sNX = read_int;
+	config.readInto(read_int, "N_Y", 10);
+	G4int sNY = read_int;
+
+
+    SetW(s_W);
+    SetTW(s_TW);
+    SetL(s_L);
+    SetS(s_S);
+    SetD(s_D);
+    SetTD(s_TD);
+    SetHD(s_HD);
+    SetPD(s_PD);
+
+    SetRodWidth(rod_w);
+    SetRodDepth(rod_t);
+    SetRodDistance(rod_dist);
+    
+    SetNX(sNX);
+    SetNY(sNY);
+
+	
+	// Materials
+	G4String readm;
+	config.readInto<G4String>(readm, "COLL_MATERIAL", "G4_W");
+	SetCollMaterial(readm);
+
+    config.readInto<G4String>(readm, "ROD_MATERIAL", "G4_Al");
+    SetRodMaterial(readm);
+
+    config.readInto<G4String>(readm, "DETW_MATERIAL", "G4_Be");
+    SetDetWMaterial(readm);
+
+    config.readInto<G4String>(readm, "DETB_MATERIAL", "G4_Al");
+    SetDetBMaterial(readm);
+    
+    config.readInto<G4String>(readm, "DETC_MATERIAL", "G4_AIR");
+    SetDetCMaterial(readm);
+
+	
+}
+
+
+// Definition of the materials
+void DetectorConstruction::DefineMaterials()
+{
+    G4NistManager* man = G4NistManager::Instance();
+
+	G4double a;			// Atomic mass
+	G4double z;			// Atomic number
+	G4double density;	// Density
+	G4int nel;			// Number of elements in a compound
+	G4int ncomponents;	// Number of components in a mixture
+	G4double fractionmass;
+	
+	// Elements
+	G4Element*  H  = new G4Element("Hydrogen"  , "H" , z = 1. , a =  1.008*g/mole);
+//    G4Element*  He = new G4Element("Helium"    , "He", z = 2. , a =  4.003*g/mole);
+//    G4Element*  C  = new G4Element("Carbon"    , "C" , z = 6. , a =  12.01*g/mole);
+//    G4Element*  N  = new G4Element("Nitrogen"  , "N" , z = 7. , a =  14.01*g/mole);
+//    G4Element*  O  = new G4Element("Oxygen"    , "O" , z = 8. , a =  16.00*g/mole);
+//    G4Element*  Na = new G4Element("Sodium"    , "Na", z = 11., a =  22.99*g/mole);
+//    G4Element*  Al = new G4Element("Aluminium" , "Al", z = 13., a =  26.98*g/mole);
+//    G4Element*  Si = new G4Element("Silicon"   , "Si", z = 14., a =  28.08*g/mole);
+//    G4Element*  K  = new G4Element("Potassium" , "K" , z = 19., a =  39.10*g/mole);
+//    G4Element*  Ti = new G4Element("Titanium"  , "Ti", z = 22., a =  47.87*g/mole);
+//    G4Element*  Cu = new G4Element("Copper"    , "Cu", z = 29., a =  63.55*g/mole);
+//    G4Element*  As = new G4Element("Arsenic"   , "As", z = 33., a =  74.92*g/mole);
+//    G4Element*  Br = new G4Element("Bromine"   , "Br", z = 35., a =  79.90*g/mole);
+//    G4Element*  Mo = new G4Element("Molybdenum", "Mo", z = 42., a =  95.94*g/mole);
+//    G4Element*  I  = new G4Element("Iodine"    , "I" , z = 53., a = 126.90*g/mole);
+//    G4Element*  Cs = new G4Element("Caesium"   , "Cs", z = 55., a = 132.90*g/mole);
+//    G4Element*  La = new G4Element("Lanthanium", "La", z = 57., a = 138.90*g/mole);
+//    G4Element*  Ta = new G4Element("Tantalum"  , "Ta", z = 73., a = 180.94*g/mole);
+//    G4Element*  W  = new G4Element("Tungsten"  , "W" , z = 74., a = 183.84*g/mole);
+//    G4Element*  Pb = new G4Element("Lead"      , "Pb", z = 82., a = 207.20*g/mole);
+//    G4Element*  Bi = new G4Element("Bismuth"   , "Bi", z = 83., a = 208.98*g/mole);
+
+	// Materials 
+	// Vacuum
+	G4Material* Vacuum = new G4Material("Vacuum", density = 1.e-25*g/cm3, nel = 1);
+	Vacuum -> AddElement(H, 100*perCent);
+
+    // Air
+    G4Material* G4_AIR = man->FindOrBuildMaterial("G4_AIR");
+
+	// Helium
+    G4Material* G4_He = man->FindOrBuildMaterial("G4_He");
+    
+    // Argon
+    G4Material* G4_Ar = man->FindOrBuildMaterial("G4_Ar");
+
+    // CO2
+    G4Material* G4_CARBON_DIOXIDE = man->FindOrBuildMaterial("G4_CARBON_DIOXIDE");
+
+    
+	// Silicon Solid
+    G4Material* G4_Si = man->FindOrBuildMaterial("G4_Si");
+
+	// Aluminium Solid
+    G4Material* G4_Al = man->FindOrBuildMaterial("G4_Al");
+
+	// Copper Solid
+    G4Material* G4_Cu = man->FindOrBuildMaterial("G4_Cu");
+    
+    // Tungsten Solid
+    G4Material* G4_W = man->FindOrBuildMaterial("G4_W");
+
+    // Beryllium
+    G4Material* G4_Be = man->FindOrBuildMaterial("G4_Be");
+
+	// Default materials of the World: vacuum
+	defaultMaterial  = Vacuum;
+}
+
+
+
+// Detector construction
+G4VPhysicalVolume* DetectorConstruction::Construct()
+{
+	// Clean old geometry, if any
+	G4GeometryManager::GetInstance()->OpenGeometry();
+	G4PhysicalVolumeStore::GetInstance()->Clean();
+	G4LogicalVolumeStore::GetInstance()->Clean();
+	G4SolidStore::GetInstance()->Clean();
+
+
+	// 0. Experimental hall (world volume)
+	// Solid
+	G4Box* experimentalHall_box = new G4Box("experimentalHall_box",
+									  		worldSide/2., worldSide/2., worldSide/2.);
+	// Logical
+	experimentalHall_log  = new G4LogicalVolume(experimentalHall_box,
+	                                            defaultMaterial, "experimentalHall_log", 0, 0, 0);
+	// Physical
+	experimentalHall_phys = new G4PVPlacement(0,
+											  G4ThreeVector(0,0,0),
+											  experimentalHall_log,
+											  "experimentalHall_phys",
+											  0,
+											  false,
+											  0);
+
+    // Collimator parameterisation
+    G4int nCells = nX*nY;
+    G4cout << "Number of collimator cells: x " << nX << " y " << nY << " total " << nCells << G4endl;
+    G4double spacing_cell = W + t_W ;
+    
+    G4double collBox_x = nX * spacing_cell;
+    G4double collBox_y = nY * spacing_cell;
+    G4double collBox_z = L ;
+
+    
+    // Solid
+    G4Box* collBox_box = new G4Box("coll_box", collBox_x/2., collBox_y/2., collBox_z/2.);
+    // Logical
+    G4LogicalVolume* collBox_log = new G4LogicalVolume(collBox_box, collMaterial, "collBox_log", 0, 0, 0);
+    // Physical
+    G4double collBoxPlacement_z = (S+L/2.);
+    G4VPhysicalVolume* collBox_phys = new G4PVPlacement(0,
+                                                        G4ThreeVector(0.,0.,collBoxPlacement_z),
+                                                        collBox_log,
+                                                        "collBox_phys",
+                                                        experimentalHall_log,
+                                                        false,
+                                                        0);
+
+    
+	// Solid
+	G4Box* coll_box = new G4Box("coll_box", W/2., W/2., L/2.);
+	// Logical
+	coll_log = new G4LogicalVolume(coll_box, defaultMaterial, "coll_log", 0, 0, 0);
+	// Physical
+	collParam = new ModuleParameterisation(spacing_cell, nX, nY, 0);
+	
+	coll_phys = new G4PVParameterised("coll_phys",       	// their name
+									 coll_log,    	        // their logical volume
+									 collBox_log,  // Mother logical volume
+									 kXAxis,          		// Are placed along this axis 
+									 nCells,    		// Number of chambers
+									 collParam);   		// The parametrisation
+
+		
+    
+    // Rod
+    // Solid
+    G4Box* rod_box = new G4Box("rod_box", collBox_x/2., rod_width/2., rod_depth/2.);
+    // Logical
+    rod_log = new G4LogicalVolume(rod_box, rodMaterial, "rod_log", 0, 0, 0);
+    // Physical
+    G4double rod_placement_y = -1.5*spacing_cell;
+    G4double rod_placement_z = rod_distance;
+    rod_phys = new G4PVPlacement(0,
+                                 G4ThreeVector(0.,rod_placement_y,rod_placement_z),
+                                 rod_log,
+                                 "rod_phys",
+                                 experimentalHall_log,
+                                 false,
+                                 0);
+    
+
+    // Gap box
+    // Solid
+    G4Box* detB_box = new G4Box("detB_box", collBox_x/2., collBox_y/2., h_D/2.);
+    // Logical
+    detB_log = new G4LogicalVolume(detB_box, collMaterial, "detB_log", 0, 0, 0);
+    // Physical
+    detB_phys = new G4PVPlacement(0,
+                                 G4ThreeVector(0.,0.,-h_D/2.),
+                                 detB_log,
+                                 "detB_phys",
+                                 experimentalHall_log,
+                                 false,
+                                 0);
+    
+    
+    // Gap
+    // Solid
+    G4Tubs* detG_box = new G4Tubs("detG_box",
+                                  0*cm,
+                                  D/2.,
+                                  h_D/2.,
+                                  0*deg,
+                                  360*deg);
+    // Logical
+    detG_log = new G4LogicalVolume(detG_box, defaultMaterial, "detG_log", 0, 0, 0);
+    // Physical
+    detGParam = new ModuleParameterisation(spacing_cell, nX, nY, 0.);
+    
+    detG_phys = new G4PVParameterised("detG_phys",       	// their name
+                                      detG_log,    	        // their logical volume
+                                      detB_log,             // Mother logical volume
+                                      kXAxis,          		// Are placed along this axis
+                                      nCells,               // Number of chambers
+                                      detGParam);   		// The parametrisation
+
+    
+    
+    
+    // Detector window
+    // Solid
+    G4Box* detW_box = new G4Box("detW_box", collBox_x/2., collBox_y/2., p_D/2.);
+
+    // Logical
+    detW_log = new G4LogicalVolume(detW_box, detWMaterial, "detW_log", 0, 0, 0);
+    // Physical
+    detW_phys = new G4PVPlacement(0,
+                                  G4ThreeVector(0.,0.,-h_D-p_D/2.),
+                                  detW_log,
+                                  "detW_phys",
+                                  experimentalHall_log,
+                                  false,
+                                  0);
+
+
+
+	// Set visualization attributes
+	// RGB components
+	G4Colour white   (1.0, 1.0, 1.0);
+	G4Colour red     (1.0, 0.0, 0.0);
+	G4Colour green   (0.0, 1.0, 0.0);
+	G4Colour blue    (0.0, 0.0, 1.0);
+	G4Colour yellow  (1.0, 1.0, 0.0);
+	G4Colour magenta (1.0, 0.0, 1.0);
+	G4Colour cyan    (0.0, 1.0, 1.0);
+
+	experimentalHall_log -> SetVisAttributes(G4VisAttributes::Invisible);  
+
+	G4VisAttributes* collBoxVisAtt= new G4VisAttributes(yellow);
+	collBox_log -> SetVisAttributes(collBoxVisAtt);
+
+    G4VisAttributes* collVisAtt= new G4VisAttributes(white);
+    coll_log -> SetVisAttributes(collVisAtt);
+
+    G4VisAttributes* rodVisAtt= new G4VisAttributes(red);
+    rod_log -> SetVisAttributes(rodVisAtt);
+
+    G4VisAttributes* detWVisAtt= new G4VisAttributes(blue);
+    detW_log -> SetVisAttributes(detWVisAtt);
+    
+    G4VisAttributes* detGVisAtt= new G4VisAttributes(white);
+    detG_log -> SetVisAttributes(detGVisAtt);
+
+    G4VisAttributes* detBVisAtt= new G4VisAttributes(red);
+    detB_log -> SetVisAttributes(detBVisAtt);
+
+
+//	// Dump the geometry in a GDML file
+//	G4String fWriteFile = "geometry.gdml";
+//	G4GDMLParser parser;
+//	std::remove(fWriteFile.c_str());
+//	parser.Write(fWriteFile, experimentalHall_phys, false);
+
+
+	// The function must return the physical volume of the world
+	return experimentalHall_phys;
+}
+
+
+void DetectorConstruction::ConstructSDandField()
+{
+    // Sensitive volume
+    // So far, the detector created above is not yet a real detector: it is just
+    // a geometrical object (with some attributes) placed within the world volume.
+    // To make the volume a detector, which can record e.g. hits, one must
+    // define a sensitive volume associated with it.
+    // For this purpose, a SensitiveDetector object is instantiated.
+    // SD for the coll
+        
+    // Instantiation of the sensitive detector and readout geometry
+    SensitiveDetector* SD  = new SensitiveDetector("SD");
+    G4SDManager::GetSDMpointer()->AddNewDetector(SD);
+    SetSensitiveDetector(detW_log, SD);
+    
+    
+}
+
+
+void DetectorConstruction::SetCollMaterial(G4String materialChoice)
+{
+	G4Material* pttoMaterial = G4Material::GetMaterial(materialChoice);     
+	if (pttoMaterial) collMaterial = pttoMaterial;
+}
+
+void DetectorConstruction::SetRodMaterial(G4String materialChoice)
+{
+    G4Material* pttoMaterial = G4Material::GetMaterial(materialChoice);
+    if (pttoMaterial) rodMaterial = pttoMaterial;
+}
+
+void DetectorConstruction::SetDetWMaterial(G4String materialChoice)
+{
+    G4Material* pttoMaterial = G4Material::GetMaterial(materialChoice);
+    if (pttoMaterial) detWMaterial = pttoMaterial;
+}
+
+void DetectorConstruction::SetDetBMaterial(G4String materialChoice)
+{
+    G4Material* pttoMaterial = G4Material::GetMaterial(materialChoice);
+    if (pttoMaterial) detBMaterial = pttoMaterial;
+}
+
+void DetectorConstruction::SetDetCMaterial(G4String materialChoice)
+{
+    G4Material* pttoMaterial = G4Material::GetMaterial(materialChoice);
+    if (pttoMaterial) detCMaterial = pttoMaterial;
+}
+
+
+void DetectorConstruction::PrintParameters()
+{
+	G4cout  << "\n-----------------------------------------------------------------------------------\n"
+			<< "          Geometrical and physical parameters: "
+    << "\n W            (inches) : " 	<< W/cm /2.54
+    << "\n t_W          (inches) : " 	<< t_W/cm /2.54
+    << "\n L            (inches) : " 	<< L/cm /2.54
+    << "\n S            (inches) : " 	<< S/cm /2.54
+    << "\n Collimator material   : " 	<< collMaterial -> GetName()
+    << "\n Rod material          : " 	<< rodMaterial -> GetName()
+    << "\n Detector box material : " 	<< detBMaterial -> GetName() ;
+
+	G4cout  << "\n-----------------------------------------------------------------------------------\n";
+}
+
+
+
+void DetectorConstruction::UpdateGeometry()
+{  
+	G4RunManager::GetRunManager()->DefineWorldVolume(Construct());
+	G4RunManager::GetRunManager()->GeometryHasBeenModified();
+}
+
+

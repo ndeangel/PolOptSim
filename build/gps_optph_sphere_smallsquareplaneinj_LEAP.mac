@@ -1,0 +1,14 @@
+# a gps file for testing
+
+/gps/particle opticalphoton
+/gps/energy 3 eV
+/gps/pos/type Plane
+/gps/pos/shape Rectangle
+/gps/pos/halfx 4 mm
+/gps/pos/halfy 4 mm
+/gps/pos/centre 0.0 0.0 0.0 cm
+/gps/ang/type cos
+/gps/ang/mintheta 0 deg
+/gps/ang/maxtheta 180 deg
+/gps/ang/minphi 0 deg
+/gps/ang/maxphi 360 deg

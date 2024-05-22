@@ -1,0 +1,13 @@
+# a gps file for testing
+
+/gps/particle e-
+/gps/energy 50 keV
+/gps/pos/type Plane
+/gps/pos/shape Rectangle
+#/gps/pos/centre 0.945 0.945 0.0 cm #channel 45
+/gps/pos/centre 0.325 0.325 0.0 cm #channel 36
+/gps/pos/halfx 0.1 cm
+/gps/pos/halfy 0.1 cm
+/gps/direction 0 0 -1
+/gps/polarization 1 0 0
+

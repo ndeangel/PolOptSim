@@ -1,0 +1,41 @@
+# a gps file for testing
+
+/gps/particle opticalphoton
+#/gps/energy 3 eV
+/gps/pos/type Plane
+/gps/pos/shape Rectangle
+/gps/pos/centre 0.0 0.0 1.0 cm
+/gps/pos/halfx 0.1 cm
+/gps/pos/halfy 0.1 cm
+/gps/direction 0 0 -1
+/gps/polarization 1 0 0
+
+/gps/ene/type Arb
+/gps/ene/diffspec 0
+/gps/hist/type arb
+/gps/hist/point 2.5e-06 0.06295
+/gps/hist/point 2.53e-06 0.08970
+/gps/hist/point 2.57e-06 0.13994
+/gps/hist/point 2.62e-06 0.24228
+/gps/hist/point 2.67e-06 0.38596
+/gps/hist/point 2.72e-06 0.46600
+/gps/hist/point 2.75e-06 0.53013
+/gps/hist/point 2.77e-06 0.58262
+/gps/hist/point 2.79e-06 0.64176
+/gps/hist/point 2.81e-06 0.71922
+/gps/hist/point 2.84e-06 0.83327
+/gps/hist/point 2.87e-06 0.92258
+/gps/hist/point 2.88e-06 0.95350
+/gps/hist/point 2.90e-06 0.99341
+/gps/hist/point 2.91e-06 1.00000
+/gps/hist/point 2.93e-06 0.98498
+/gps/hist/point 2.94e-06 0.94850
+/gps/hist/point 2.96e-06 0.80291
+/gps/hist/point 2.98e-06 0.60991
+/gps/hist/point 3e-06 0.41866
+/gps/hist/point 3e-06 0.41866
+/gps/hist/point 3.02e-06 0.28394
+/gps/hist/point 3.04e-06 0.17136
+/gps/hist/point 3.07e-06 0.04536
+/gps/hist/point 3.09e-06 0.00883
+/gps/hist/inter Lin
