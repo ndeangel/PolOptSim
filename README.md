@@ -11,8 +11,8 @@ If you find this code/work, please cite [De Angelis N. et al. Optical design, si
   - Inside the 'build' directory, you should run 'cmake ../'. This will automatically setup everything for you regarding Geant4, ROOT, scripts, etc. It will produce a Makefile.
     It will also create a 'bin' (for all binaries) and a 'data/G4out' (for simulation files) directory.
 
-* make -j<N>
-  - Compile by replacing <N> by he number of cores you want to use.
+* make -jN
+  - Compile by replacing N by the number of cores you want to use.
 
 * ./OptSim gps.mac run.mac -c config.mac -o output.root
   - Run the simulations. To run with visualization, use the '-g vis.mac' option.
