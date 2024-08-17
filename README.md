@@ -1,6 +1,6 @@
 # POLAR-2 Polarimeter Optical Simulation
 
-If you find this code/work, please cite [De Angelis N. et al. Optical design, simulations, and characterization of a POLAR-2 polarimeter module. JINST 2024](www.google.com)
+If you find this code/work, please cite [De Angelis N. et al. Optimizing the light output of a plastic scintillator and SiPM based detector through optical characterization and simulation: A case study for POLAR-2. JINST 2024](https://arxiv.org/abs/2407.10741)
 
 ## How to compile and run the G4 simulation
 
@@ -20,6 +20,6 @@ If you find this code/work, please cite [De Angelis N. et al. Optical design, si
 
 ## Version note
 
-All the work described in [De Angelis Nicolas. Development of the Next Generation Space-based Compton Polarimeter and Energy Resolved Polarization Analysis of Gamma-Ray Bursts Prompt Emission. PhD Thesis 2023.](https://doi.org/10.13097/archive-ouverte/unige:173869) and [De Angelis N. et al. Optical design, simulations, and characterization of a POLAR-2 polarimeter module. JINST 2024](www.google.com) has been performed with Geant4 version 10.6.1 and ROOT version 6.18/05.
+All the work described in [De Angelis Nicolas. Development of the Next Generation Space-based Compton Polarimeter and Energy Resolved Polarization Analysis of Gamma-Ray Bursts Prompt Emission. PhD Thesis 2023.](https://doi.org/10.13097/archive-ouverte/unige:173869) and [De Angelis N. et al. Optimizing the light output of a plastic scintillator and SiPM based detector through optical characterization and simulation: A case study for POLAR-2. JINST 2024](https://arxiv.org/abs/2407.10741) has been performed with Geant4 version 10.6.1 and ROOT version 6.18/05.
 
 
